@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Football Simulator Pro</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a6e1a;
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .pitch {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            background-color: #2a8a2a;
+            border: 4px solid white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        /* Field markings */
+        .center-circle {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .center-spot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .halfway-line {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background-color: white;
+            left: 50%;
+        }
+        
+        .penalty-area {
+            position: absolute;
+            width: 120px;
+            height: 300px;
+            border: 2px solid white;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .penalty-area.left {
+            left: 0;
+            border-right: none;
+        }
+        
+        .penalty-area.right {
+            right: 0;
+            border-left: none;
+        }
+        
+        .goal-area {
+            position: absolute;
+            width: 50px;
+            height: 150px;
+            border: 2px solid white;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .goal-area.left {
+            left: 0;
+            border-right: none;
+        }
+        
+        .goal-area.right {
+            right: 0;
+            border-left: none;
+        }
+        
+        .penalty-spot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+            top: 50%;
+        }
+        
+        .penalty-spot.left {
+            left: 90px;
+        }
+        
+        .penalty-spot.right {
+            right: 90px;
+        }
+        
+        .corner-arc {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+        
+        .corner-arc.top-left {
+            top: 0;
+            left: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .corner-arc.top-right {
+            top: 0;
+            right: 0;
+            border-bottom-left-radius: 0;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .corner-arc.bottom-left {
+            bottom: 0;
+            left: 0;
+            border-top-right-radius: 0;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .corner-arc.bottom-right {
+            bottom: 0;
+            right: 0;
+            border-top-left-radius: 0;
+            border-left: none;
+            border-top: none;
+        }
+        
+        /* Player styling */
+        .player {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .player.home {
+            background-color: #3498db;
+            border: 2px solid #2980b9;
+        }
+        
+        .player.away {
+            background-color: #e74c3c;
+            border: 2px solid #c0392b;
+        }
+        
+        .player.GK {
+            background-color: #f1c40f;
+            border-color: #f39c12;
+        }
+        
+        .ball {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background-color: white;
+            border-radius: 50%;
+            z-index: 5;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .ball.shooting {
+            transform: scale(1.5);
+            transition: all 0.1s ease;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 800px;
+            margin-bottom: 20px;
+        }
+        
+        .control-panel {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            width: 250px;
+        }
+        
+        .scoreboard {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .team-name {
+            font-size: 18px;
+            margin: 0 15px;
+        }
+        
+        select, button {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: none;
+            width: 100%;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .formation-selector {
+            margin-top: 10px;
+        }
+        
+        .game-info {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            height: 120px;
+            overflow-y: auto;
+            width: 800px;
+        }
+        
+        .game-event {
+            margin: 5px 0;
+            padding: 3px;
+            border-bottom: 1px solid #444;
+            font-size: 14px;
+        }
+        
+        .time-display {
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .match-stats {
+            display: flex;
+            justify-content: space-around;
+            width: 800px;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .highlight {
+            animation: highlight 1s;
+        }
+        
+        @keyframes highlight {
+            0% { background-color: rgba(255, 255, 255, 0.3); }
+            100% { background-color: transparent; }
+        }
+        
+        .goal-celebration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: #e74c3c;
+            animation: celebration 2s;
+            pointer-events: none;
+            opacity: 0;
+        }
+        
+        @keyframes celebration {
+            0% { opacity: 0; transform: scale(0.5); }
+            20% { opacity: 1; transform: scale(1.2); }
+            80% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+        /* Mobile Responsive Styles */
+@media (max-width: 900px) {
+    body {
+        padding: 10px;
+    }
+    
+    .pitch {
+        width: 100%;
+        max-width: 500px;
+        height: 300px;
+    }
+    
+    /* Adjust field markings for smaller size */
+    .center-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .penalty-area {
+        width: 70px;
+        height: 180px;
+    }
+    
+    .goal-area {
+        width: 30px;
+        height: 90px;
+    }
+    
+    .penalty-spot.left {
+        left: 50px;
+    }
+    
+    .penalty-spot.right {
+        right: 50px;
+    }
+    
+    .player {
+        width: 18px;
+        height: 18px;
+        font-size: 8px;
+    }
+    
+    .ball {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .controls {
+        flex-direction: column;
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .control-panel {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .match-stats {
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .stat {
+        min-width: 80px;
+        margin: 5px;
+        padding: 5px 10px;
+    }
+    
+    .game-info {
+        width: 100%;
+        max-width: 500px;
+        height: 100px;
+    }
+    
+    .scoreboard {
+        font-size: 18px;
+        padding: 8px 15px;
+    }
+    
+    .team-name {
+        font-size: 14px;
+        margin: 0 10px;
+    }
+    
+    .time-display {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 400px) {
+    .pitch {
+        height: 250px;
+    }
+    
+    .player {
+        width: 16px;
+        height: 16px;
+        font-size: 7px;
+    }
+    
+    .stat {
+        min-width: 70px;
+        padding: 4px 8px;
+    }
+    
+    .stat-value {
+        font-size: 16px;
+    }
+    
+    h1 {
+        font-size: 24px;
+    }
+}
+
+/* Touch controls for mobile */
+.touch-controls {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .touch-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 10px;
+        width: 100%;
+        max-width: 500px;
+        margin-top: 10px;
+    }
+    
+    .touch-btn {
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 15px;
+        font-size: 18px;
+        text-align: center;
+        cursor: pointer;
+    }
+    
+    .touch-btn:active {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .d-pad-center {
+        grid-column: 2;
+        grid-row: 2;
+    }
+    
+    .d-pad-up {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    
+    .d-pad-right {
+        grid-column: 3;
+        grid-row: 2;
+    }
+    
+    .d-pad-down {
+        grid-column: 2;
+        grid-row: 3;
+    }
+    
+    .d-pad-left {
+        grid-column: 1;
+        grid-row: 2;
+    }
+    
+    .action-btn {
+        background-color: #e74c3c;
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+    
+    .secondary-btn {
+        background-color: #3498db;
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Football Simulator Pro</h1>
+        
+        <div class="game-container">
+            <div class="scoreboard">
+                <div class="team-name" id="home-team-name">Home</div>
+                <span id="home-score">0</span> - <span id="away-score">0</span>
+                <div class="team-name" id="away-team-name">Away</div>
+            </div>
+            
+            <div class="time-display" id="game-time">00:00</div>
+            
+            <div class="match-stats">
+                <div class="stat">
+                    <div class="stat-value" id="shots-home">0</div>
+                    <div class="stat-label">Shots (H)</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="possession">50% - 50%</div>
+                    <div class="stat-label">Possession</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="shots-away">0</div>
+                    <div class="stat-label">Shots (A)</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-panel">
+                    <h3>Home Team</h3>
+                    <input type="text" id="home-team-input" placeholder="Team name" value="Home">
+                    <select id="home-formation" class="formation-selector">
+                        <option value="4-4-2">4-4-2 Classic</option>
+                        <option value="4-3-3">4-3-3 Attack</option>
+                        <option value="3-5-2">3-5-2 Midfield</option>
+                        <option value="4-2-3-1">4-2-3-1 Modern</option>
+                        <option value="5-3-2">5-3-2 Defensive</option>
+                    </select>
+                    <button id="apply-home-formation">Apply Formation</button>
+                    <div class="game-info" id="home-team-info">
+                        <div class="game-event">Select formation and apply</div>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <h3>Game Controls</h3>
+                    <button id="start-training">Start Training</button>
+                    <button id="start-match">Start Match</button>
+                    <button id="pause-game">Pause</button>
+                    <button id="reset-game">Reset</button>
+                    <div class="game-info" id="game-events">
+                        <div class="game-event">Welcome to AI Football Simulator Pro!</div>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <h3>Away Team</h3>
+                    <input type="text" id="away-team-input" placeholder="Team name" value="Away">
+                    <select id="away-formation" class="formation-selector">
+                        <option value="4-4-2">4-4-2 Classic</option>
+                        <option value="4-3-3">4-3-3 Attack</option>
+                        <option value="3-5-2">3-5-2 Midfield</option>
+                        <option value="4-2-3-1">4-2-3-1 Modern</option>
+                        <option value="5-3-2">5-3-2 Defensive</option>
+                    </select>
+                    <button id="apply-away-formation">Apply Formation</button>
+                    <div class="game-info" id="away-team-info">
+                        <div class="game-event">Select formation and apply</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pitch" id="pitch">
+                <!-- Field markings -->
+                <div class="center-circle"></div>
+                <div class="center-spot"></div>
+                <div class="halfway-line"></div>
+                <div class="penalty-area left"></div>
+                <div class="penalty-area right"></div>
+                <div class="goal-area left"></div>
+                <div class="goal-area right"></div>
+                <div class="penalty-spot left"></div>
+                <div class="penalty-spot right"></div>
+                <div class="corner-arc top-left"></div>
+                <div class="corner-arc top-right"></div>
+                <div class="corner-arc bottom-left"></div>
+                <div class="corner-arc bottom-right"></div>
+                
+                <!-- Goal celebration -->
+                <div class="goal-celebration" id="goal-celebration">GOAL!</div>
+                
+                <!-- Players and ball will be added here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Sound effects -->
+    <audio id="whistle-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-referee-whistle-1291.mp3" preload="auto"></audio>
+    <audio id="crowd-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-crowd-at stadium-cheer-2043.mp3" preload="auto" loop></audio>
+    <audio id="kick-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-kicking-ball-1669.mp3" preload="auto"></audio>
+    <audio id="goal-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+    <audio id="save-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3" preload="auto"></audio>
+
+    <script>
+        // Game state
+        const gameState = {
+            homeTeam: {
+                name: "Home",
+                formation: '4-4-2',
+                players: [],
+                score: 0,
+                shots: 0,
+                possessionTime: 0,
+                strategy: 'balanced'
+            },
+            awayTeam: {
+                name: "Away",
+                formation: '4-4-2',
+                players: [],
+                score: 0,
+                shots: 0,
+                possessionTime: 0,
+                strategy: 'balanced'
+            },
+            ball: null,
+            gameActive: false,
+            isMatch: false,
+            isTraining: false,
+            gameTime: 0,
+            interval: null,
+            possession: null,
+            lastEventTime: 0,
+            matchHalf: 1,
+            ballCarrier: null,
+            gameSpeed: 100,
+            lastPossessionChange: 0,
+            lastShotTime: 0,
+            gameEvents: []
+        };
+        
+        // Player positions based on formations
+        const formations = {
+            '4-4-2': {
+                name: "4-4-2 Classic",
+                description: "Balanced formation with 4 defenders, 4 midfielders and 2 forwards",
+                defenders: [
+                    { x: 20, y: 150, role: 'LB' },
+                    { x: 20, y: 250, role: 'CB' },
+                    { x: 20, y: 350, role: 'CB' },
+                    { x: 20, y: 450, role: 'RB' }
+                ],
+                midfielders: [
+                    { x: 100, y: 150, role: 'LM' },
+                    { x: 100, y: 250, role: 'CM' },
+                    { x: 100, y: 350, role: 'CM' },
+                    { x: 100, y: 450, role: 'RM' }
+                ],
+                forwards: [
+                    { x: 180, y: 250, role: 'CF' },
+                    { x: 180, y: 350, role: 'CF' }
+                ],
+                attacking: {
+                    defenders: [
+                        { x: 40, y: 150 },
+                        { x: 40, y: 250 },
+                        { x: 40, y: 350 },
+                        { x: 40, y: 450 }
+                    ],
+                    midfielders: [
+                        { x: 150, y: 150 },
+                        { x: 150, y: 250 },
+                        { x: 150, y: 350 },
+                        { x: 150, y: 450 }
+                    ],
+                    forwards: [
+                        { x: 250, y: 250 },
+                        { x: 250, y: 350 }
+                    ]
+                },
+                defending: {
+                    defenders: [
+                        { x: 10, y: 150 },
+                        { x: 10, y: 250 },
+                        { x: 10, y: 350 },
+                        { x: 10, y: 450 }
+                    ],
+                    midfielders: [
+                        { x: 70, y: 150 },
+                        { x: 70, y: 250 },
+                        { x: 70, y: 350 },
+                        { x: 70, y: 450 }
+                    ],
+                    forwards: [
+                        { x: 120, y: 250 },
+                        { x: 120, y: 350 }
+                    ]
+                }
+            },
+            '4-3-3': {
+                name: "4-3-3 Attack",
+                description: "Attacking formation with wingers and a strong midfield trio",
+                defenders: [
+                    { x: 20, y: 150, role: 'LB' },
+                    { x: 20, y: 250, role: 'CB' },
+                    { x: 20, y: 350, role: 'CB' },
+                    { x: 20, y: 450, role: 'RB' }
+                ],
+                midfielders: [
+                    { x: 100, y: 200, role: 'CM' },
+                    { x: 100, y: 300, role: 'CM' },
+                    { x: 100, y: 400, role: 'CM' }
+                ],
+                forwards: [
+                    { x: 180, y: 150, role: 'LW' },
+                    { x: 180, y: 300, role: 'CF' },
+                    { x: 180, y: 450, role: 'RW' }
+                ],
+                attacking: {
+                    defenders: [
+                        { x: 40, y: 150 },
+                        { x: 40, y: 250 },
+                        { x: 40, y: 350 },
+                        { x: 40, y: 450 }
+                    ],
+                    midfielders: [
+                        { x: 140, y: 200 },
+                        { x: 140, y: 300 },
+                        { x: 140, y: 400 }
+                    ],
+                    forwards: [
+                        { x: 250, y: 150 },
+                        { x: 250, y: 300 },
+                        { x: 250, y: 450 }
+                    ]
+                },
+                defending: {
+                    defenders: [
+                        { x: 10, y: 150 },
+                        { x: 10, y: 250 },
+                        { x: 10, y: 350 },
+                        { x: 10, y: 450 }
+                    ],
+                    midfielders: [
+                        { x: 70, y: 200 },
+                        { x: 70, y: 300 },
+                        { x: 70, y: 400 }
+                    ],
+                    forwards: [
+                        { x: 120, y: 150 },
+                        { x: 120, y: 300 },
+                        { x: 120, y: 450 }
+                    ]
+                }
+            },
+            '3-5-2': {
+                name: "3-5-2 Midfield",
+                description: "Formation that dominates midfield with 5 midfielders",
+                defenders: [
+                    { x: 20, y: 200, role: 'CB' },
+                    { x: 20, y: 300, role: 'CB' },
+                    { x: 20, y: 400, role: 'CB' }
+                ],
+                midfielders: [
+                    { x: 80, y: 150, role: 'LWB' },
+                    { x: 80, y: 250, role: 'CM' },
+                    { x: 80, y: 350, role: 'CM' },
+                    { x: 80, y: 450, role: 'RWB' },
+                    { x: 120, y: 300, role: 'CAM' }
+                ],
+                forwards: [
+                    { x: 180, y: 250, role: 'CF' },
+                    { x: 180, y: 350, role: 'CF' }
+                ],
+                attacking: {
+                    defenders: [
+                        { x: 40, y: 200 },
+                        { x: 40, y: 300 },
+                        { x: 40, y: 400 }
+                    ],
+                    midfielders: [
+                        { x: 120, y: 150 },
+                        { x: 120, y: 250 },
+                        { x: 120, y: 350 },
+                        { x: 120, y: 450 },
+                        { x: 160, y: 300 }
+                    ],
+                    forwards: [
+                        { x: 250, y: 250 },
+                        { x: 250, y: 350 }
+                    ]
+                },
+                defending: {
+                    defenders: [
+                        { x: 10, y: 200 },
+                        { x: 10, y: 300 },
+                        { x: 10, y: 400 }
+                    ],
+                    midfielders: [
+                        { x: 50, y: 150 },
+                        { x: 50, y: 250 },
+                        { x: 50, y: 350 },
+                        { x: 50, y: 450 },
+                        { x: 90, y: 300 }
+                    ],
+                    forwards: [
+                        { x: 140, y: 250 },
+                        { x: 140, y: 350 }
+                    ]
+                }
+            },
+            '4-2-3-1': {
+                name: "4-2-3-1 Modern",
+                description: "Modern formation with defensive mids and attacking wingers",
+                defenders: [
+                    { x: 20, y: 150, role: 'LB' },
+                    { x: 20, y: 250, role: 'CB' },
+                    { x: 20, y: 350, role: 'CB' },
+                    { x: 20, y: 450, role: 'RB' }
+                ],
+                midfielders: [
+                    { x: 80, y: 250, role: 'CDM' },
+                    { x: 80, y: 350, role: 'CDM' },
+                    { x: 140, y: 200, role: 'LW' },
+                    { x: 140, y: 300, role: 'CAM' },
+                    { x: 140, y: 400, role: 'RW' }
+                ],
+                forwards: [
+                    { x: 180, y: 300, role: 'CF' }
+                ],
+                attacking: {
+                    defenders: [
+                        { x: 40, y: 150 },
+                        { x: 40, y: 250 },
+                        { x: 40, y: 350 },
+                        { x: 40, y: 450 }
+                    ],
+                    midfielders: [
+                        { x: 100, y: 250 },
+                        { x: 100, y: 350 },
+                        { x: 180, y: 200 },
+                        { x: 180, y: 300 },
+                        { x: 180, y: 400 }
+                    ],
+                    forwards: [
+                        { x: 250, y: 300 }
+                    ]
+                },
+                defending: {
+                    defenders: [
+                        { x: 10, y: 150 },
+                        { x: 10, y: 250 },
+                        { x: 10, y: 350 },
+                        { x: 10, y: 450 }
+                    ],
+                    midfielders: [
+                        { x: 50, y: 250 },
+                        { x: 50, y: 350 },
+                        { x: 100, y: 200 },
+                        { x: 100, y: 300 },
+                        { x: 100, y: 400 }
+                    ],
+                    forwards: [
+                        { x: 150, y: 300 }
+                    ]
+                }
+            },
+            '5-3-2': {
+                name: "5-3-2 Defensive",
+                description: "Defensive formation with 5 defenders and compact midfield",
+                defenders: [
+                    { x: 15, y: 100, role: 'LWB' },
+                    { x: 15, y: 200, role: 'CB' },
+                    { x: 15, y: 300, role: 'CB' },
+                    { x: 15, y: 400, role: 'CB' },
+                    { x: 15, y: 500, role: 'RWB' }
+                ],
+                midfielders: [
+                    { x: 100, y: 200, role: 'CM' },
+                    { x: 100, y: 300, role: 'CM' },
+                    { x: 100, y: 400, role: 'CM' }
+                ],
+                forwards: [
+                    { x: 180, y: 250, role: 'CF' },
+                    { x: 180, y: 350, role: 'CF' }
+                ],
+                attacking: {
+                    defenders: [
+                        { x: 40, y: 100 },
+                        { x: 40, y: 200 },
+                        { x: 40, y: 300 },
+                        { x: 40, y: 400 },
+                        { x: 40, y: 500 }
+                    ],
+                    midfielders: [
+                        { x: 150, y: 200 },
+                        { x: 150, y: 300 },
+                        { x: 150, y: 400 }
+                    ],
+                    forwards: [
+                        { x: 250, y: 250 },
+                        { x: 250, y: 350 }
+                    ]
+                },
+                defending: {
+                    defenders: [
+                        { x: 10, y: 100 },
+                        { x: 10, y: 200 },
+                        { x: 10, y: 300 },
+                        { x: 10, y: 400 },
+                        { x: 10, y: 500 }
+                    ],
+                    midfielders: [
+                        { x: 70, y: 200 },
+                        { x: 70, y: 300 },
+                        { x: 70, y: 400 }
+                    ],
+                    forwards: [
+                        { x: 120, y: 250 },
+                        { x: 120, y: 350 }
+                    ]
+                }
+            }
+        };
+        
+        // Player attributes
+        const playerAttributes = {
+            'GK': { speed: 0.8, shooting: 0.1, passing: 0.5, dribbling: 0.3, defending: 0.9, positioning: 0.9 },
+            'CB': { speed: 0.6, shooting: 0.3, passing: 0.6, dribbling: 0.4, defending: 0.9, positioning: 0.8 },
+            'LB': { speed: 0.8, shooting: 0.4, passing: 0.7, dribbling: 0.6, defending: 0.8, positioning: 0.7 },
+            'RB': { speed: 0.8, shooting: 0.4, passing: 0.7, dribbling: 0.6, defending: 0.8, positioning: 0.7 },
+            'LWB': { speed: 0.9, shooting: 0.5, passing: 0.7, dribbling: 0.7, defending: 0.7, positioning: 0.7 },
+            'RWB': { speed: 0.9, shooting: 0.5, passing: 0.7, dribbling: 0.7, defending: 0.7, positioning: 0.7 },
+            'CDM': { speed: 0.7, shooting: 0.5, passing: 0.8, dribbling: 0.6, defending: 0.8, positioning: 0.8 },
+            'CM': { speed: 0.7, shooting: 0.6, passing: 0.8, dribbling: 0.7, defending: 0.6, positioning: 0.8 },
+            'CAM': { speed: 0.8, shooting: 0.7, passing: 0.9, dribbling: 0.8, defending: 0.4, positioning: 0.8 },
+            'LM': { speed: 0.8, shooting: 0.6, passing: 0.8, dribbling: 0.8, defending: 0.5, positioning: 0.7 },
+            'RM': { speed: 0.8, shooting: 0.6, passing: 0.8, dribbling: 0.8, defending: 0.5, positioning: 0.7 },
+            'LW': { speed: 0.9, shooting: 0.8, passing: 0.7, dribbling: 0.9, defending: 0.3, positioning: 0.7 },
+            'RW': { speed: 0.9, shooting: 0.8, passing: 0.7, dribbling: 0.9, defending: 0.3, positioning: 0.7 },
+            'CF': { speed: 0.8, shooting: 0.9, passing: 0.7, dribbling: 0.8, defending: 0.2, positioning: 0.9 }
+        };
+        
+        // Initialize the game
+        function initGame() {
+            const pitch = document.getElementById('pitch');
+            
+            // Clear existing players and ball
+            pitch.querySelectorAll('.player, .ball').forEach(el => el.remove());
+            
+            // Set team names
+            gameState.homeTeam.name = document.getElementById('home-team-input').value || "Home";
+            gameState.awayTeam.name = document.getElementById('away-team-input').value || "Away";
+            document.getElementById('home-team-name').textContent = gameState.homeTeam.name;
+            document.getElementById('away-team-name').textContent = gameState.awayTeam.name;
+            
+            // Create players for home team
+            gameState.homeTeam.players = [];
+            const homeFormation = formations[gameState.homeTeam.formation];
+            
+            // Goalkeeper (always the same position)
+            createPlayer(pitch, 'home', 1, 10, 250, 'GK', playerAttributes.GK);
+            
+            // Defenders
+            homeFormation.defenders.forEach((pos, i) => {
+                const role = pos.role || 'CB';
+                createPlayer(pitch, 'home', i+2, pos.x, pos.y, role, playerAttributes[role]);
+            });
+            
+            // Midfielders
+            homeFormation.midfielders.forEach((pos, i) => {
+                const role = pos.role || 'CM';
+                createPlayer(pitch, 'home', i+2+homeFormation.defenders.length, pos.x, pos.y, role, playerAttributes[role]);
+            });
+            
+            // Forwards
+            homeFormation.forwards.forEach((pos, i) => {
+                const role = pos.role || 'CF';
+                createPlayer(pitch, 'home', i+2+homeFormation.defenders.length+homeFormation.midfielders.length, pos.x, pos.y, role, playerAttributes[role]);
+            });
+            
+            // Create players for away team (mirrored)
+            gameState.awayTeam.players = [];
+            const awayFormation = formations[gameState.awayTeam.formation];
+            
+            // Goalkeeper
+            createPlayer(pitch, 'away', 1, 790, 250, 'GK', playerAttributes.GK);
+            
+            // Defenders
+            awayFormation.defenders.forEach((pos, i) => {
+                const role = pos.role || 'CB';
+                createPlayer(pitch, 'away', i+2, 800 - pos.x, pos.y, role, playerAttributes[role]);
+            });
+            
+            // Midfielders
+            awayFormation.midfielders.forEach((pos, i) => {
+                const role = pos.role || 'CM';
+                createPlayer(pitch, 'away', i+2+awayFormation.defenders.length, 800 - pos.x, pos.y, role, playerAttributes[role]);
+            });
+            
+            // Forwards
+            awayFormation.forwards.forEach((pos, i) => {
+                const role = pos.role || 'CF';
+                createPlayer(pitch, 'away', i+2+awayFormation.defenders.length+awayFormation.midfielders.length, 800 - pos.x, pos.y, role, playerAttributes[role]);
+            });
+            
+            // Create ball
+            gameState.ball = document.createElement('div');
+            gameState.ball.className = 'ball';
+            gameState.ball.style.left = '400px';
+            gameState.ball.style.top = '250px';
+            pitch.appendChild(gameState.ball);
+            
+            // Reset game state
+            gameState.homeTeam.score = 0;
+            gameState.awayTeam.score = 0;
+            gameState.homeTeam.shots = 0;
+            gameState.awayTeam.shots = 0;
+            gameState.homeTeam.possessionTime = 0;
+            gameState.awayTeam.possessionTime = 0;
+            gameState.gameTime = 0;
+            gameState.matchHalf = 1;
+            gameState.ballCarrier = null;
+            gameState.lastPossessionChange = 0;
+            gameState.lastShotTime = 0;
+            gameState.gameEvents = [];
+            
+            // Update UI
+            document.getElementById('home-score').textContent = '0';
+            document.getElementById('away-score').textContent = '0';
+            document.getElementById('shots-home').textContent = '0';
+            document.getElementById('shots-away').textContent = '0';
+            updateGameTimeDisplay();
+            updatePossessionDisplay();
+            
+            // Clear game events
+            document.getElementById('game-events').innerHTML = '<div class="game-event">Game initialized. Select formations and start a match or training.</div>';
+            document.getElementById('home-team-info').innerHTML = `<div class="game-event">${homeFormation.name}: ${homeFormation.description}</div>`;
+            document.getElementById('away-team-info').innerHTML = `<div class="game-event">${awayFormation.name}: ${awayFormation.description}</div>`;
+        }
+        
+        function createPlayer(pitch, team, number, x, y, position, attributes) {
+            const player = document.createElement('div');
+            player.className = `player ${team} ${position}`;
+            player.textContent = number;
+            player.style.left = `${x}px`;
+            player.style.top = `${y}px`;
+            
+            // Store player data
+            const playerData = {
+                element: player,
+                number: number,
+                x: x,
+                y: y,
+                targetX: x,
+                targetY: y,
+                position: position,
+                role: position,
+                team: team,
+                attributes: attributes,
+                speed: 0.5 + (attributes.speed * 0.5),
+                hasBall: false,
+                isMoving: false,
+                actionTimer: 0
+            };
+            
+            if (team === 'home') {
+                gameState.homeTeam.players.push(playerData);
+            } else {
+                gameState.awayTeam.players.push(playerData);
+            }
+            
+            pitch.appendChild(player);
+            return playerData;
+        }
+        
+        // Update game time display
+        function updateGameTimeDisplay() {
+            const minutes = Math.floor(gameState.gameTime / 60);
+            const seconds = gameState.gameTime % 60;
+            document.getElementById('game-time').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${gameState.matchHalf > 1 ? '(ET)' : ''}`;
+        }
+        
+        // Update possession display
+        function updatePossessionDisplay() {
+            const totalTime = gameState.homeTeam.possessionTime + gameState.awayTeam.possessionTime;
+            if (totalTime === 0) {
+                document.getElementById('possession').textContent = '50% - 50%';
+                return;
+            }
+            
+            const homePercent = Math.round((gameState.homeTeam.possessionTime / totalTime) * 100);
+            const awayPercent = 100 - homePercent;
+            document.getElementById('possession').textContent = `${homePercent}% - ${awayPercent}%`;
+        }
+        
+        // Add game event to log
+        function addGameEvent(message, highlightTeam = null) {
+            const eventsDiv = document.getElementById('game-events');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'game-event';
+            
+            if (highlightTeam) {
+                eventDiv.classList.add('highlight');
+                if (highlightTeam === 'home') {
+                    eventDiv.style.color = '#3498db';
+                } else {
+                    eventDiv.style.color = '#e74c3c';
+                }
+            }
+            
+            eventDiv.textContent = message;
+            eventsDiv.insertBefore(eventDiv, eventsDiv.firstChild);
+            
+            // Store event for match stats
+            gameState.gameEvents.push({
+                time: gameState.gameTime,
+                message: message
+            });
+            
+            // Limit number of events shown
+            if (eventsDiv.children.length > 10) {
+                eventsDiv.removeChild(eventsDiv.lastChild);
+            }
+        }
+        
+        // Play sound effect
+        function playSound(soundId) {
+            const sound = document.getElementById(soundId);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+        
+        // Show goal celebration
+        function showGoalCelebration() {
+            const celebration = document.getElementById('goal-celebration');
+            celebration.style.display = 'flex';
+            celebration.style.opacity = 0;
+            
+            setTimeout(() => {
+                celebration.style.opacity = 1;
+                celebration.style.display = 'flex';
+                
+                setTimeout(() => {
+                    celebration.style.opacity = 0;
+                }, 1800);
+            }, 10);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameState.gameActive) return;
+            
+            // Update game time
+            gameState.gameTime++;
+            
+            // Check for half time (45 minutes) or full time (90 minutes)
+            if (gameState.isMatch) {
+                if (gameState.matchHalf === 1 && gameState.gameTime >= 2700) { // 45 minutes (45 * 60)
+                    halfTime();
+                } else if (gameState.matchHalf === 2 && gameState.gameTime >= 5400) { // 90 minutes
+                    endMatch();
+                    return;
+                }
+            }
+            
+            updateGameTimeDisplay();
+            
+            // Update possession time
+            if (gameState.possession === 'home') {
+                gameState.homeTeam.possessionTime++;
+            } else if (gameState.possession === 'away') {
+                gameState.awayTeam.possessionTime++;
+            }
+            updatePossessionDisplay();
+            
+            // Move players based on possession
+            movePlayers();
+            
+            // Move ball based on possession and player positions
+            moveBall();
+            
+            // Check for goals
+            checkForGoals();
+            
+            // Random game events
+            if (gameState.isMatch && gameState.gameTime - gameState.lastEventTime > 10 && Math.random() < 0.15) {
+                triggerRandomEvent();
+                gameState.lastEventTime = gameState.gameTime;
+            }
+            
+            // Check for shots
+            if (gameState.possession && gameState.gameTime - gameState.lastShotTime > 30 && Math.random() < 0.1) {
+                attemptShot();
+                gameState.lastShotTime = gameState.gameTime;
+            }
+            
+            // Check for passes
+            if (gameState.ballCarrier && Math.random() < 0.05) {
+                attemptPass();
+            }
+            
+            // Check for tackles
+            if (gameState.ballCarrier && Math.random() < 0.03) {
+                attemptTackle();
+            }
+        }
+        
+        function movePlayers() {
+            // Move home team players
+            gameState.homeTeam.players.forEach(player => {
+                let targetPositions;
+                let formation = formations[gameState.homeTeam.formation];
+                
+                if (gameState.possession === 'home') {
+                    // Attacking formation
+                    targetPositions = formation.attacking;
+                } else {
+                    // Defending formation
+                    targetPositions = formation.defending;
+                }
+                
+                // Find target position based on player role
+                let targetPos = { x: player.x, y: player.y };
+                
+                if (player.role === 'GK') {
+                    targetPos = { x: 20, y: 250 };
+                } else if (player.role.includes('B') || player.role.includes('D')) { // Defenders
+                    const defIndex = formation.defenders.findIndex(p => p.role === player.role);
+                    if (defIndex >= 0 && targetPositions.defenders[defIndex]) {
+                        targetPos = targetPositions.defenders[defIndex];
+                    }
+                } else if (player.role.includes('M')) { // Midfielders
+                    const midIndex = formation.midfielders.findIndex(p => p.role === player.role);
+                    if (midIndex >= 0 && targetPositions.midfielders[midIndex]) {
+                        targetPos = targetPositions.midfielders[midIndex];
+                    }
+                } else { // Forwards
+                    const fwdIndex = formation.forwards.findIndex(p => p.role === player.role);
+                    if (fwdIndex >= 0 && targetPositions.forwards[fwdIndex]) {
+                        targetPos = targetPositions.forwards[fwdIndex];
+                    }
+                }
+                
+                // If player has the ball, move towards goal
+                if (player.hasBall) {
+                    // Forwards will shoot, midfielders will dribble or pass
+                    if (player.role.includes('F') || player.role.includes('W')) {
+                        // Forward - move towards goal and shoot
+                        targetPos = { x: 750, y: 250 + (Math.random() - 0.5) * 100 };
+                    } else {
+                        // Midfielder - look for pass or dribble
+                        if (Math.random() < player.attributes.passing * 0.7) {
+                            // Look for pass
+                            const teammates = gameState.homeTeam.players.filter(p => !p.hasBall);
+                            if (teammates.length > 0) {
+                                const receiver = teammates[Math.floor(Math.random() * teammates.length)];
+                                targetPos = { x: receiver.x, y: receiver.y };
+                            }
+                        } else {
+                            // Dribble forward
+                            targetPos = { x: player.x + 50, y: player.y + (Math.random() - 0.5) * 50 };
+                        }
+                    }
+                }
+                
+                // Add some randomness to movement
+                targetPos.x += (Math.random() - 0.5) * 20;
+                targetPos.y += (Math.random() - 0.5) * 20;
+                
+                // Keep within bounds
+                targetPos.x = Math.max(10, Math.min(400, targetPos.x));
+                targetPos.y = Math.max(50, Math.min(450, targetPos.y));
+                
+                // Move towards target
+                const dx = targetPos.x - player.x;
+                const dy = targetPos.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    player.x += dx / distance * player.speed;
+                    player.y += dy / distance * player.speed;
+                    player.element.style.left = `${player.x}px`;
+                    player.element.style.top = `${player.y}px`;
+                    player.isMoving = true;
+                } else {
+                    player.isMoving = false;
+                }
+            });
+            
+            // Move away team players (mirrored logic)
+            gameState.awayTeam.players.forEach(player => {
+                let targetPositions;
+                let formation = formations[gameState.awayTeam.formation];
+                
+                if (gameState.possession === 'away') {
+                    // Attacking formation
+                    targetPositions = formation.attacking;
+                } else {
+                    // Defending formation
+                    targetPositions = formation.defending;
+                }
+                
+                // Find target position based on player role
+                let targetPos = { x: player.x, y: player.y };
+                
+                if (player.role === 'GK') {
+                    targetPos = { x: 780, y: 250 };
+                } else if (player.role.includes('B') || player.role.includes('D')) { // Defenders
+                    const defIndex = formation.defenders.findIndex(p => p.role === player.role);
+                    if (defIndex >= 0 && targetPositions.defenders[defIndex]) {
+                        targetPos = {
+                            x: 800 - targetPositions.defenders[defIndex].x,
+                            y: targetPositions.defenders[defIndex].y
+                        };
+                    }
+                } else if (player.role.includes('M')) { // Midfielders
+                    const midIndex = formation.midfielders.findIndex(p => p.role === player.role);
+                    if (midIndex >= 0 && targetPositions.midfielders[midIndex]) {
+                        targetPos = {
+                            x: 800 - targetPositions.midfielders[midIndex].x,
+                            y: targetPositions.midfielders[midIndex].y
+                        };
+                    }
+                } else { // Forwards
+                    const fwdIndex = formation.forwards.findIndex(p => p.role === player.role);
+                    if (fwdIndex >= 0 && targetPositions.forwards[fwdIndex]) {
+                        targetPos = {
+                            x: 800 - targetPositions.forwards[fwdIndex].x,
+                            y: targetPositions.forwards[fwdIndex].y
+                        };
+                    }
+                }
+                
+                // If player has the ball, move towards goal
+                if (player.hasBall) {
+                    // Forwards will shoot, midfielders will dribble or pass
+                    if (player.role.includes('F') || player.role.includes('W')) {
+                        // Forward - move towards goal and shoot
+                        targetPos = { x: 50, y: 250 + (Math.random() - 0.5) * 100 };
+                    } else {
+                        // Midfielder - look for pass or dribble
+                        if (Math.random() < player.attributes.passing * 0.7) {
+                            // Look for pass
+                            const teammates = gameState.awayTeam.players.filter(p => !p.hasBall);
+                            if (teammates.length > 0) {
+                                const receiver = teammates[Math.floor(Math.random() * teammates.length)];
+                                targetPos = { x: receiver.x, y: receiver.y };
+                            }
+                        } else {
+                            // Dribble forward
+                            targetPos = { x: player.x - 50, y: player.y + (Math.random() - 0.5) * 50 };
+                        }
+                    }
+                }
+                
+                // Add some randomness to movement
+                targetPos.x += (Math.random() - 0.5) * 20;
+                targetPos.y += (Math.random() - 0.5) * 20;
+                
+                // Keep within bounds
+                targetPos.x = Math.max(400, Math.min(790, targetPos.x));
+                targetPos.y = Math.max(50, Math.min(450, targetPos.y));
+                
+                // Move towards target
+                const dx = targetPos.x - player.x;
+                const dy = targetPos.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    player.x += dx / distance * player.speed;
+                    player.y += dy / distance * player.speed;
+                    player.element.style.left = `${player.x}px`;
+                    player.element.style.top = `${player.y}px`;
+                    player.isMoving = true;
+                } else {
+                    player.isMoving = false;
+                }
+            });
+        }
+        
+        function moveBall() {
+            const ballX = parseInt(gameState.ball.style.left);
+            const ballY = parseInt(gameState.ball.style.top);
+            
+            // Check if ball is with a player
+            if (gameState.ballCarrier) {
+                // Ball follows the player who has it
+                gameState.ball.style.left = `${gameState.ballCarrier.x}px`;
+                gameState.ball.style.top = `${gameState.ballCarrier.y}px`;
+                return;
+            }
+            
+            if (!gameState.possession) {
+                // Center ball if no possession
+                gameState.ball.style.left = '400px';
+                gameState.ball.style.top = '250px';
+                return;
+            }
+            
+            const attackingTeam = gameState.possession === 'home' ? gameState.homeTeam : gameState.awayTeam;
+            
+            // Find closest attacking player to ball
+            let closestPlayer = null;
+            let minDistance = Infinity;
+            
+            attackingTeam.players.forEach(player => {
+                const dx = player.x - ballX;
+                const dy = player.y - ballY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < minDistance && distance < 100) {
+                    minDistance = distance;
+                    closestPlayer = player;
+                }
+            });
+            
+            if (closestPlayer && minDistance < 30) {
+                // Player gets the ball
+                gameState.ballCarrier = closestPlayer;
+                closestPlayer.hasBall = true;
+                playSound('kick-sound');
+                
+                // Highlight player with ball
+                closestPlayer.element.style.transform = 'scale(1.3)';
+                closestPlayer.element.style.zIndex = '20';
+                
+                addGameEvent(`${gameState.possession === 'home' ? gameState.homeTeam.name : gameState.awayTeam.name} #${closestPlayer.number} (${closestPlayer.role}) controls the ball`, gameState.possession);
+                return;
+            }
+            
+            if (closestPlayer) {
+                // Move ball towards closest player with some randomness
+                const targetX = closestPlayer.x + (Math.random() - 0.5) * 20;
+                const targetY = closestPlayer.y + (Math.random() - 0.5) * 20;
+                
+                const dx = targetX - ballX;
+                const dy = targetY - ballY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 10) {
+                    const moveX = dx / distance * 4;
+                    const moveY = dy / distance * 4;
+                    
+                    gameState.ball.style.left = `${ballX + moveX}px`;
+                    gameState.ball.style.top = `${ballY + moveY}px`;
+                }
+            } else {
+                // Ball moves slowly towards goal based on possession
+                const targetX = gameState.possession === 'home' ? 800 : 0;
+                const targetY = 250 + (Math.random() - 0.5) * 100;
+                
+                const dx = targetX - ballX;
+                const dy = targetY - ballY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 10) {
+                    const moveX = dx / distance * 2;
+                    const moveY = dy / distance * 2;
+                    
+                    gameState.ball.style.left = `${ballX + moveX}px`;
+                    gameState.ball.style.top = `${ballY + moveY}px`;
+                }
+            }
+        }
+        
+        function attemptShot() {
+            if (!gameState.ballCarrier) return;
+            
+            const shooter = gameState.ballCarrier;
+            const isHomeTeam = shooter.team === 'home';
+            
+            // Only forwards and midfielders with good shooting can shoot
+            if ((shooter.role.includes('F') || shooter.role.includes('W') || 
+                (shooter.role.includes('M') && shooter.attributes.shooting > 0.6)) && 
+                Math.random() < shooter.attributes.shooting) {
+                
+                // Shoot towards goal
+                const targetX = isHomeTeam ? 800 : 0;
+                const targetY = 250 + (Math.random() - 0.5) * 100;
+                
+                // Record shot
+                if (isHomeTeam) {
+                    gameState.homeTeam.shots++;
+                    document.getElementById('shots-home').textContent = gameState.homeTeam.shots;
+                } else {
+                    gameState.awayTeam.shots++;
+                    document.getElementById('shots-away').textContent = gameState.awayTeam.shots;
+                }
+                
+                addGameEvent(`${isHomeTeam ? gameState.homeTeam.name : gameState.awayTeam.name} #${shooter.number} (${shooter.role}) shoots!`, shooter.team);
+                
+                // Animate shot
+                gameState.ballCarrier.hasBall = false;
+                gameState.ballCarrier.element.style.transform = '';
+                gameState.ballCarrier.element.style.zIndex = '10';
+                gameState.ballCarrier = null;
+                
+                gameState.ball.classList.add('shooting');
+                playSound('kick-sound');
+                
+                const ballX = parseInt(gameState.ball.style.left);
+                const ballY = parseInt(gameState.ball.style.top);
+                
+                const dx = targetX - ballX;
+                const dy = targetY - ballY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const steps = distance / 10;
+                
+                let currentStep = 0;
+                const shotInterval = setInterval(() => {
+                    if (currentStep >= steps) {
+                        clearInterval(shotInterval);
+                        gameState.ball.classList.remove('shooting');
+                        return;
+                    }
+                    
+                    currentStep++;
+                    gameState.ball.style.left = `${ballX + (dx / steps) * currentStep}px`;
+                    gameState.ball.style.top = `${ballY + (dy / steps) * currentStep}px`;
+                }, 20);
+                
+                // Check if shot is on target (60% chance)
+                const onTarget = Math.random() < 0.6;
+                
+                if (!onTarget) {
+                    setTimeout(() => {
+                        addGameEvent(`Shot by ${isHomeTeam ? gameState.homeTeam.name : gameState.awayTeam.name} #${shooter.number} goes wide!`, shooter.team);
+                        
+                        // Ball goes out of play
+                        gameState.ball.style.left = isHomeTeam ? '790px' : '10px';
+                        gameState.ball.style.top = `${200 + Math.random() * 200}px`;
+                        
+                        // Change possession
+                        gameState.possession = isHomeTeam ? 'away' : 'home';
+                        gameState.lastPossessionChange = gameState.gameTime;
+                    }, 1000);
+                    return;
+                }
+                
+                // Check if goalkeeper saves (based on GK skill and shooter skill)
+                const goalkeeper = isHomeTeam ? 
+                    gameState.awayTeam.players.find(p => p.role === 'GK') : 
+                    gameState.homeTeam.players.find(p => p.role === 'GK');
+                
+                const saveProbability = 0.4 + (goalkeeper.attributes.defending * 0.4) - (shooter.attributes.shooting * 0.3);
+                
+                setTimeout(() => {
+                    if (Math.random() < saveProbability) {
+                        // Goalkeeper saves
+                        playSound('save-sound');
+                        addGameEvent(`Fantastic save by ${isHomeTeam ? gameState.awayTeam.name : gameState.homeTeam.name} goalkeeper!`, isHomeTeam ? 'away' : 'home');
+                        
+                        // Ball bounces back
+                        gameState.ball.style.left = isHomeTeam ? '700px' : '100px';
+                        gameState.ball.style.top = `${200 + Math.random() * 200}px`;
+                        
+                        // Change possession randomly
+                        if (Math.random() < 0.7) {
+                            gameState.possession = isHomeTeam ? 'away' : 'home';
+                            gameState.lastPossessionChange = gameState.gameTime;
+                        }
+                    } else {
+                        // Goal scored
+                        if (isHomeTeam) {
+                            gameState.homeTeam.score++;
+                            document.getElementById('home-score').textContent = gameState.homeTeam.score;
+                        } else {
+                            gameState.awayTeam.score++;
+                            document.getElementById('away-score').textContent = gameState.awayTeam.score;
+                        }
+                        
+                        playSound('goal-sound');
+                        showGoalCelebration();
+                        addGameEvent(`GOAL! ${isHomeTeam ? gameState.homeTeam.name : gameState.awayTeam.name} scores! ${gameState.homeTeam.score}-${gameState.awayTeam.score}`, shooter.team);
+                        
+                        resetAfterGoal();
+                    }
+                }, 1000);
+            }
+        }
+        
+        function attemptPass() {
+            if (!gameState.ballCarrier) return;
+            
+            const passer = gameState.ballCarrier;
+            const isHomeTeam = passer.team === 'home';
+            const team = isHomeTeam ? gameState.homeTeam : gameState.awayTeam;
+            
+            // Only attempt pass if player has good passing skill
+            if (Math.random() < passer.attributes.passing * 0.8) {
+                // Find teammates in range
+                const teammates = team.players.filter(p => 
+                    p !== passer && 
+                    Math.sqrt(Math.pow(p.x - passer.x, 2) + Math.pow(p.y - passer.y, 2) < 200
+                ));
+                
+                if (teammates.length > 0) {
+                    // Choose best receiver (based on positioning and distance)
+                    const receiver = teammates.reduce((best, current) => {
+                        const currentScore = current.attributes.positioning * (1 - (Math.sqrt(Math.pow(current.x - passer.x, 2) + Math.pow(current.y - passer.y, 2)) / 200));
+                        const bestScore = best.attributes.positioning * (1 - (Math.sqrt(Math.pow(best.x - passer.x, 2) + Math.pow(best.y - passer.y, 2)) / 200));
+                        return currentScore > bestScore ? current : best;
+                    }, teammates[0]);
+                    
+                    // Execute pass
+                    addGameEvent(`${isHomeTeam ? gameState.homeTeam.name : gameState.awayTeam.name} #${passer.number} passes to #${receiver.number}`, passer.team);
+                    playSound('kick-sound');
+                    
+                    // Animate pass
+                    gameState.ballCarrier.hasBall = false;
+                    gameState.ballCarrier.element.style.transform = '';
+                    gameState.ballCarrier.element.style.zIndex = '10';
+                    gameState.ballCarrier = null;
+                    
+                    const ballX = parseInt(gameState.ball.style.left);
+                    const ballY = parseInt(gameState.ball.style.top);
+                    
+                    const dx = receiver.x - ballX;
+                    const dy = receiver.y - ballY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const steps = distance / 10;
+                    
+                    let currentStep = 0;
+                    const passInterval = setInterval(() => {
+                        if (currentStep >= steps) {
+                            clearInterval(passInterval);
+                            
+                            // Check if pass is intercepted (based on defender skills)
+                            const defendingTeam = isHomeTeam ? gameState.awayTeam : gameState.homeTeam;
+                            const closestDefender = defendingTeam.players.reduce((closest, player) => {
+                                const distToBall = Math.sqrt(Math.pow(player.x - receiver.x, 2) + Math.pow(player.y - receiver.y, 2));
+                                const closestDist = Math.sqrt(Math.pow(closest.x - receiver.x, 2) + Math.pow(closest.y - receiver.y, 2));
+                                return distToBall < closestDist ? player : closest;
+                            }, defendingTeam.players[0]);
+                            
+                            const interceptProbability = closestDefender.attributes.defending * 0.6;
+                            
+                            if (Math.random() < interceptProbability && 
+                                Math.sqrt(Math.pow(closestDefender.x - receiver.x, 2) + Math.pow(closestDefender.y - receiver.y, 2)) < 50) {
+                                // Pass intercepted
+                                addGameEvent(`Intercepted by ${isHomeTeam ? gameState.awayTeam.name : gameState.homeTeam.name} #${closestDefender.number}!`, isHomeTeam ? 'away' : 'home');
+                                
+                                gameState.possession = isHomeTeam ? 'away' : 'home';
+                                gameState.lastPossessionChange = gameState.gameTime;
+                                
+                                // Ball goes to interceptor
+                                gameState.ball.style.left = `${closestDefender.x}px`;
+                                gameState.ball.style.top = `${closestDefender.y}px`;
+                                closestDefender.hasBall = true;
+                                gameState.ballCarrier = closestDefender;
+                                closestDefender.element.style.transform = 'scale(1.3)';
+                                closestDefender.element.style.zIndex = '20';
+                            } else {
+                                // Pass successful
+                                gameState.ball.style.left = `${receiver.x}px`;
+                                gameState.ball.style.top = `${receiver.y}px`;
+                                receiver.hasBall = true;
+                                gameState.ballCarrier = receiver;
+                                receiver.element.style.transform = 'scale(1.3)';
+                                receiver.element.style.zIndex = '20';
+                            }
+                            return;
+                        }
+                        
+                        currentStep++;
+                        gameState.ball.style.left = `${ballX + (dx / steps) * currentStep}px`;
+                        gameState.ball.style.top = `${ballY + (dy / steps) * currentStep}px`;
+                    }, 20);
+                }
+            }
+        }
+        
+        function attemptTackle() {
+            if (!gameState.ballCarrier) return;
+            
+            const dribbler = gameState.ballCarrier;
+            const isHomeTeam = dribbler.team === 'home';
+            const defendingTeam = isHomeTeam ? gameState.awayTeam : gameState.homeTeam;
+            
+            // Find closest defender
+            const closestDefender = defendingTeam.players.reduce((closest, player) => {
+                const distToBall = Math.sqrt(Math.pow(player.x - dribbler.x, 2) + Math.pow(player.y - dribbler.y, 2));
+                const closestDist = Math.sqrt(Math.pow(closest.x - dribbler.x, 2) + Math.pow(closest.y - dribbler.y, 2));
+                return distToBall < closestDist ? player : closest;
+            }, defendingTeam.players[0]);
+            
+            const distance = Math.sqrt(Math.pow(closestDefender.x - dribbler.x, 2) + Math.pow(closestDefender.y - dribbler.y, 2));
+            
+            // Only attempt tackle if defender is close and has good defending skill
+            if (distance < 30 && Math.random() < closestDefender.attributes.defending * 0.7) {
+                // Tackle success depends on dribbler's dribbling skill
+                const tackleSuccess = Math.random() < (closestDefender.attributes.defending / (closestDefender.attributes.defending + dribbler.attributes.dribbling));
+                
+                if (tackleSuccess) {
+                    // Successful tackle
+                    addGameEvent(`Great tackle by ${isHomeTeam ? gameState.awayTeam.name : gameState.homeTeam.name} #${closestDefender.number}!`, isHomeTeam ? 'away' : 'home');
+                    
+                    dribbler.hasBall = false;
+                    dribbler.element.style.transform = '';
+                    dribbler.element.style.zIndex = '10';
+                    
+                    // Ball goes to tackler
+                    gameState.ball.style.left = `${closestDefender.x}px`;
+                    gameState.ball.style.top = `${closestDefender.y}px`;
+                    closestDefender.hasBall = true;
+                    gameState.ballCarrier = closestDefender;
+                    closestDefender.element.style.transform = 'scale(1.3)';
+                    closestDefender.element.style.zIndex = '20';
+                    
+                    // Change possession
+                    gameState.possession = isHomeTeam ? 'away' : 'home';
+                    gameState.lastPossessionChange = gameState.gameTime;
+                } else {
+                    // Failed tackle
+                    addGameEvent(`${isHomeTeam ? gameState.homeTeam.name : gameState.awayTeam.name} #${dribbler.number} skips past the tackle!`, dribbler.team);
+                }
+            }
+        }
+        
+        function checkForGoals() {
+            const ballX = parseInt(gameState.ball.style.left);
+            const ballY = parseInt(gameState.ball.style.top);
+            
+            // Check for home team goal (ball in right goal)
+            if (ballX > 790 && ballY > 200 && ballY < 300 && !gameState.ballCarrier) {
+                if (gameState.isMatch) {
+                    gameState.homeTeam.score++;
+                    document.getElementById('home-score').textContent = gameState.homeTeam.score;
+                    playSound('goal-sound');
+                    showGoalCelebration();
+                    addGameEvent(`GOAL! ${gameState.homeTeam.name} scores! ${gameState.homeTeam.score}-${gameState.awayTeam.score}`, 'home');
+                }
+                resetAfterGoal();
+            }
+            
+            // Check for away team goal (ball in left goal)
+            if (ballX < 10 && ballY > 200 && ballY < 300 && !gameState.ballCarrier) {
+                if (gameState.isMatch) {
+                    gameState.awayTeam.score++;
+                    document.getElementById('away-score').textContent = gameState.awayTeam.score;
+                    playSound('goal-sound');
+                    showGoalCelebration();
+                    addGameEvent(`GOAL! ${gameState.awayTeam.name} scores! ${gameState.homeTeam.score}-${gameState.awayTeam.score}`, 'away');
+                }
+                resetAfterGoal();
+            }
+        }
+        
+        function resetAfterGoal() {
+            // Reset ball to center
+            gameState.ball.style.left = '400px';
+            gameState.ball.style.top = '250px';
+            
+            if (gameState.ballCarrier) {
+                gameState.ballCarrier.hasBall = false;
+                gameState.ballCarrier.element.style.transform = '';
+                gameState.ballCarrier.element.style.zIndex = '10';
+                gameState.ballCarrier = null;
+            }
+            
+            // Reset possession to conceding team
+            gameState.possession = gameState.ball.style.left === '400px' ? 
+                (Math.random() < 0.5 ? 'home' : 'away') : 
+                (parseInt(gameState.ball.style.left) > 400 ? 'away' : 'home');
+            
+            // In training mode, keep possession with the same team
+            if (gameState.isTraining) {
+                gameState.possession = 'home';
+            }
+            
+            gameState.lastPossessionChange = gameState.gameTime;
+            
+            // Reset player positions based on formations
+            resetPlayerPositions();
+        }
+        
+        function resetPlayerPositions() {
+            // Home team
+            const homeFormation = formations[gameState.homeTeam.formation];
+            let playerIndex = 0;
+            
+            // Goalkeeper (index 0)
+            gameState.homeTeam.players[playerIndex].x = 10;
+            gameState.homeTeam.players[playerIndex].y = 250;
+            gameState.homeTeam.players[playerIndex].element.style.left = '10px';
+            gameState.homeTeam.players[playerIndex].element.style.top = '250px';
+            playerIndex++;
+            
+            // Defenders
+            homeFormation.defenders.forEach((pos, i) => {
+                gameState.homeTeam.players[playerIndex].x = pos.x;
+                gameState.homeTeam.players[playerIndex].y = pos.y;
+                gameState.homeTeam.players[playerIndex].element.style.left = `${pos.x}px`;
+                gameState.homeTeam.players[playerIndex].element.style.top = `${pos.y}px`;
+                playerIndex++;
+            });
+            
+            // Midfielders
+            homeFormation.midfielders.forEach((pos, i) => {
+                gameState.homeTeam.players[playerIndex].x = pos.x;
+                gameState.homeTeam.players[playerIndex].y = pos.y;
+                gameState.homeTeam.players[playerIndex].element.style.left = `${pos.x}px`;
+                gameState.homeTeam.players[playerIndex].element.style.top = `${pos.y}px`;
+                playerIndex++;
+            });
+            
+            // Forwards
+            homeFormation.forwards.forEach((pos, i) => {
+                gameState.homeTeam.players[playerIndex].x = pos.x;
+                gameState.homeTeam.players[playerIndex].y = pos.y;
+                gameState.homeTeam.players[playerIndex].element.style.left = `${pos.x}px`;
+                gameState.homeTeam.players[playerIndex].element.style.top = `${pos.y}px`;
+                playerIndex++;
+            });
+            
+            // Away team (mirrored)
+            const awayFormation = formations[gameState.awayTeam.formation];
+            playerIndex = 0;
+            
+            // Goalkeeper (index 0)
+            gameState.awayTeam.players[playerIndex].x = 790;
+            gameState.awayTeam.players[playerIndex].y = 250;
+            gameState.awayTeam.players[playerIndex].element.style.left = '790px';
+            gameState.awayTeam.players[playerIndex].element.style.top = '250px';
+            playerIndex++;
+            
+            // Defenders
+            awayFormation.defenders.forEach((pos, i) => {
+                gameState.awayTeam.players[playerIndex].x = 800 - pos.x;
+                gameState.awayTeam.players[playerIndex].y = pos.y;
+                gameState.awayTeam.players[playerIndex].element.style.left = `${800 - pos.x}px`;
+                gameState.awayTeam.players[playerIndex].element.style.top = `${pos.y}px`;
+                playerIndex++;
+            });
+            
+            // Midfielders
+            awayFormation.midfielders.forEach((pos, i) => {
+                gameState.awayTeam.players[playerIndex].x = 800 - pos.x;
+                gameState.awayTeam.players[playerIndex].y = pos.y;
+                gameState.awayTeam.players[playerIndex].element.style.left = `${800 - pos.x}px`;
+                gameState.awayTeam.players[playerIndex].element.style.top = `${pos.y}px`;
+                playerIndex++;
+            });
+            
+            // Forwards
+            awayFormation.forwards.forEach((pos, i) => {
+                gameState.awayTeam.players[playerIndex].x = 800 - pos.x;
+                gameState.awayTeam.players[playerIndex].y = pos.y;
+                gameState.awayTeam.players[playerIndex].element.style.left = `${800 - pos.x}px`;
+                gameState.awayTeam.players[playerIndex].element.style.top = `${pos.y}px`;
+                playerIndex++;
+            });
+        }
+        
+        function triggerRandomEvent() {
+            const teamWithBall = gameState.possession === 'home' ? gameState.homeTeam : gameState.awayTeam;
+            const opposingTeam = gameState.possession === 'home' ? gameState.awayTeam : gameState.homeTeam;
+            
+            const events = [
+                {
+                    message: `Great through ball by ${teamWithBall.name}!`,
+                    condition: () => true
+                },
+                {
+                    message: `${opposingTeam.name} defending well, keeping their shape.`,
+                    condition: () => true
+                },
+                {
+                    message: `${teamWithBall.name} building up play from the back.`,
+                    condition: () => Math.random() < 0.5
+                },
+                {
+                    message: `Counter attack opportunity for ${teamWithBall.name}!`,
+                    condition: () => gameState.lastPossessionChange > 0 && 
+                                  (gameState.gameTime - gameState.lastPossessionChange) < 10
+                },
+                {
+                    message: `${teamWithBall.name} dominating possession.`,
+                    condition: () => (teamWithBall.possessionTime / (teamWithBall.possessionTime + opposingTeam.possessionTime)) > 0.6
+                },
+                {
+                    message: `${opposingTeam.name} struggling to get out of their half.`,
+                    condition: () => (teamWithBall.possessionTime / (teamWithBall.possessionTime + opposingTeam.possessionTime)) > 0.6
+                },
+                {
+                    message: `${teamWithBall.name} playing with confidence.`,
+                    condition: () => (teamWithBall === gameState.homeTeam ? gameState.homeTeam.score : gameState.awayTeam.score) >
+                                    (opposingTeam === gameState.homeTeam ? gameState.homeTeam.score : gameState.awayTeam.score)
+                },
+                {
+                    message: `${opposingTeam.name} need to respond after conceding.`,
+                    condition: () => (opposingTeam === gameState.homeTeam ? gameState.homeTeam.score : gameState.awayTeam.score) <
+                                    (teamWithBall === gameState.homeTeam ? gameState.homeTeam.score : gameState.awayTeam.score)
+                },
+                {
+                    message: `The match is evenly balanced at the moment.`,
+                    condition: () => Math.abs((teamWithBall.possessionTime / (teamWithBall.possessionTime + opposingTeam.possessionTime)) - 0.5) < 0.1
+                }
+            ];
+            
+            const possibleEvents = events.filter(e => e.condition());
+            if (possibleEvents.length > 0) {
+                const randomEvent = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+                addGameEvent(randomEvent.message, gameState.possession);
+            }
+        }
+        
+        function halfTime() {
+            gameState.gameActive = false;
+            gameState.matchHalf = 2;
+            clearInterval(gameState.interval);
+            
+            playSound('whistle-sound');
+            addGameEvent(`Half time! Score: ${gameState.homeTeam.name} ${gameState.homeTeam.score} - ${gameState.awayTeam.score} ${gameState.awayTeam.name}`);
+            
+            // Show stats
+            const homePossession = Math.round((gameState.homeTeam.possessionTime / (gameState.homeTeam.possessionTime + gameState.awayTeam.possessionTime)) * 100);
+            const awayPossession = 100 - homePossession;
+            
+            addGameEvent(`Possession: ${homePossession}% - ${awayPossession}%`);
+            addGameEvent(`Shots: ${gameState.homeTeam.name} ${gameState.homeTeam.shots} - ${gameState.awayTeam.shots} ${gameState.awayTeam.name}`);
+            
+            // Reset for second half
+            setTimeout(() => {
+                addGameEvent("Second half begins!");
+                resetPlayerPositions();
+                gameState.ball.style.left = '400px';
+                gameState.ball.style.top = '250px';
+                gameState.possession = Math.random() < 0.5 ? 'home' : 'away';
+                gameState.lastPossessionChange = gameState.gameTime;
+                
+                if (gameState.ballCarrier) {
+                    gameState.ballCarrier.hasBall = false;
+                    gameState.ballCarrier.element.style.transform = '';
+                    gameState.ballCarrier.element.style.zIndex = '10';
+                    gameState.ballCarrier = null;
+                }
+                
+                gameState.gameActive = true;
+                gameState.interval = setInterval(gameLoop, gameState.gameSpeed);
+            }, 3000);
+        }
+        
+        function endMatch() {
+            gameState.gameActive = false;
+            clearInterval(gameState.interval);
+            
+            playSound('whistle-sound');
+            
+            if (gameState.homeTeam.score > gameState.awayTeam.score) {
+                addGameEvent(`Match ended! ${gameState.homeTeam.name} wins ${gameState.homeTeam.score}-${gameState.awayTeam.score}!`, 'home');
+            } else if (gameState.awayTeam.score > gameState.homeTeam.score) {
+                addGameEvent(`Match ended! ${gameState.awayTeam.name} wins ${gameState.homeTeam.score}-${gameState.awayTeam.score}!`, 'away');
+            } else {
+                addGameEvent(`Match ended in a draw! ${gameState.homeTeam.score}-${gameState.awayTeam.score}`);
+            }
+            
+            // Show stats
+            const homePossession = Math.round((gameState.homeTeam.possessionTime / (gameState.homeTeam.possessionTime + gameState.awayTeam.possessionTime)) * 100);
+            const awayPossession = 100 - homePossession;
+            
+            addGameEvent(`Possession: ${homePossession}% - ${awayPossession}%`);
+            addGameEvent(`Shots: ${gameState.homeTeam.name} ${gameState.homeTeam.shots} - ${gameState.awayTeam.shots} ${gameState.awayTeam.name}`);
+        }
+        
+        // Event listeners
+        document.getElementById('apply-home-formation').addEventListener('click', () => {
+            gameState.homeTeam.formation = document.getElementById('home-formation').value;
+            const formation = formations[gameState.homeTeam.formation];
+            addGameEvent(`${gameState.homeTeam.name} changed to ${formation.name} formation`, 'home');
+            document.getElementById('home-team-info').innerHTML = `<div class="game-event">${formation.name}: ${formation.description}</div>`;
+            resetPlayerPositions();
+        });
+        
+        document.getElementById('apply-away-formation').addEventListener('click', () => {
+            gameState.awayTeam.formation = document.getElementById('away-formation').value;
+            const formation = formations[gameState.awayTeam.formation];
+            addGameEvent(`${gameState.awayTeam.name} changed to ${formation.name} formation`, 'away');
+            document.getElementById('away-team-info').innerHTML = `<div class="game-event">${formation.name}: ${formation.description}</div>`;
+            resetPlayerPositions();
+        });
+        
+        document.getElementById('home-team-input').addEventListener('change', (e) => {
+            gameState.homeTeam.name = e.target.value || "Home";
+            document.getElementById('home-team-name').textContent = gameState.homeTeam.name;
+        });
+        
+        document.getElementById('away-team-input').addEventListener('change', (e) => {
+            gameState.awayTeam.name = e.target.value || "Away";
+            document.getElementById('away-team-name').textContent = gameState.awayTeam.name;
+        });
+        
+        document.getElementById('start-training').addEventListener('click', () => {
+            if (gameState.gameActive) return;
+            
+            gameState.gameActive = true;
+            gameState.isMatch = false;
+            gameState.isTraining = true;
+            gameState.possession = 'home';
+            gameState.gameTime = 0;
+            gameState.matchHalf = 1;
+            gameState.homeTeam.score = 0;
+            gameState.awayTeam.score = 0;
+            gameState.homeTeam.shots = 0;
+            gameState.awayTeam.shots = 0;
+            gameState.homeTeam.possessionTime = 0;
+            gameState.awayTeam.possessionTime = 0;
+            
+            document.getElementById('home-score').textContent = '0';
+            document.getElementById('away-score').textContent = '0';
+            document.getElementById('shots-home').textContent = '0';
+            document.getElementById('shots-away').textContent = '0';
+            
+            addGameEvent("Training session started! Home team has possession.");
+            
+            playSound('whistle-sound');
+            
+            gameState.interval = setInterval(gameLoop, gameState.gameSpeed);
+        });
+        
+        document.getElementById('start-match').addEventListener('click', () => {
+            if (gameState.gameActive) return;
+            
+            gameState.gameActive = true;
+            gameState.isMatch = true;
+            gameState.isTraining = false;
+            gameState.possession = Math.random() < 0.5 ? 'home' : 'away';
+            gameState.gameTime = 0;
+            gameState.matchHalf = 1;
+            gameState.homeTeam.score = 0;
+            gameState.awayTeam.score = 0;
+            gameState.homeTeam.shots = 0;
+            gameState.awayTeam.shots = 0;
+            gameState.homeTeam.possessionTime = 0;
+            gameState.awayTeam.possessionTime = 0;
+            
+            document.getElementById('home-score').textContent = '0';
+            document.getElementById('away-score').textContent = '0';
+            document.getElementById('shots-home').textContent = '0';
+            document.getElementById('shots-away').textContent = '0';
+            
+            addGameEvent(`Match started! ${gameState.possession === 'home' ? gameState.homeTeam.name : gameState.awayTeam.name} kicks off.`);
+            
+            playSound('whistle-sound');
+            playSound('crowd-sound');
+            
+            gameState.interval = setInterval(gameLoop, gameState.gameSpeed);
+        });
+        
+        document.getElementById('pause-game').addEventListener('click', () => {
+            gameState.gameActive = !gameState.gameActive;
+            
+            if (gameState.gameActive) {
+                addGameEvent("Game resumed");
+                gameState.interval = setInterval(gameLoop, gameState.gameSpeed);
+                
+                if (gameState.isMatch) {
+                    playSound('crowd-sound');
+                }
+            } else {
+                addGameEvent("Game paused");
+                clearInterval(gameState.interval);
+                
+                const crowdSound = document.getElementById('crowd-sound');
+                if (crowdSound) {
+                    crowdSound.pause();
+                }
+            }
+        });
+        
+        document.getElementById('reset-game').addEventListener('click', () => {
+            gameState.gameActive = false;
+            gameState.isMatch = false;
+            gameState.isTraining = false;
+            clearInterval(gameState.interval);
+            
+            const crowdSound = document.getElementById('crowd-sound');
+            if (crowdSound) {
+                crowdSound.pause();
+                crowdSound.currentTime = 0;
+            }
+            
+            initGame();
+        });
+        
+        // Initialize the game on load
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
